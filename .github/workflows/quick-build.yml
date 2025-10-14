@@ -89,9 +89,74 @@ jobs:
               ''
             }}
 
+      - name: Determine target
+        id: target
+        shell: bash
+        run: |
+          if [ "${{ inputs.platform }}" = "macos-intel" ]; then
+            echo "target=x86_64-apple-darwin" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.platform }}" = "macos-m1" ]; then
+            echo "target=aarch64-apple-darwin" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.platform }}" = "linux" ]; then
+            echo "target=x86_64-unknown-linux-gnu" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.platform }}" = "windows" ]; then
+            echo "target=x86_64-pc-windows-msvc" >> $GITHUB_OUTPUT
+          else
+            echo "target=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare artifacts (macOS)
+        if: inputs.platform == 'macos-intel' || inputs.platform == 'macos-m1'
+        run: |
+          mkdir -p artifacts
+          find src-tauri/target/${{ steps.target.outputs.target }}/release/bundle -name "*.dmg" -exec cp {} artifacts/ \;
+
+      - name: Prepare artifacts (Windows)
+        if: inputs.platform == 'windows'
+        run: |
+          mkdir artifacts
+          $exeFiles = Get-ChildItem -Path "src-tauri/target/${{ steps.target.outputs.target }}/release/bundle" -Recurse -Include "*.exe"
+          if ($exeFiles) {
+            $exeFiles | Copy-Item -Destination "artifacts/"
+          } else {
+            Get-ChildItem -Path "src-tauri/target/${{ steps.target.outputs.target }}/release/bundle" -Recurse -Include "*.msi" | Copy-Item -Destination "artifacts/"
+          }
+
+      - name: Prepare artifacts (Linux)
+        if: inputs.platform == 'linux'
+        run: |
+          mkdir -p artifacts
+          find src-tauri/target/${{ steps.target.outputs.target }}/release/bundle -name "*.deb" -exec cp {} artifacts/ \;
+          find src-tauri/target/${{ steps.target.outputs.target }}/release/bundle -name "*.AppImage" -exec cp {} artifacts/ \;
+
+      - name: Prepare artifacts (current platform)
+        if: inputs.platform == 'current'
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          # 自动检测并复制构建产物
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            cp -r src-tauri/target/release/bundle/* artifacts/ || true
+          fi
+          if [ -d "src-tauri/target/x86_64-unknown-linux-gnu/release/bundle" ]; then
+            find src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -name "*.deb" -exec cp {} artifacts/ \;
+            find src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -name "*.AppImage" -exec cp {} artifacts/ \;
+          fi
+          if [ -d "src-tauri/target/x86_64-pc-windows-msvc/release/bundle" ]; then
+            find src-tauri/target/x86_64-pc-windows-msvc/release/bundle -name "*.exe" -exec cp {} artifacts/ \; || true
+            find src-tauri/target/x86_64-pc-windows-msvc/release/bundle -name "*.msi" -exec cp {} artifacts/ \; || true
+          fi
+          if [ -d "src-tauri/target/x86_64-apple-darwin/release/bundle" ]; then
+            find src-tauri/target/x86_64-apple-darwin/release/bundle -name "*.dmg" -exec cp {} artifacts/ \;
+          fi
+          if [ -d "src-tauri/target/aarch64-apple-darwin/release/bundle" ]; then
+            find src-tauri/target/aarch64-apple-darwin/release/bundle -name "*.dmg" -exec cp {} artifacts/ \;
+          fi
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: auto-cursor-quick-build-${{ inputs.platform }}
-          path: src-tauri/target/*/release/bundle/**/*
+          path: artifacts/*
           if-no-files-found: warn
+          compression-level: 0
