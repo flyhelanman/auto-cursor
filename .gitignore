@@ -9,3 +9,5 @@ build/
 cursor_accounts
 bank_card_config.json
 email_config.json
+
+.idea/
