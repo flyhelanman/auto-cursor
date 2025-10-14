@@ -109,11 +109,13 @@ workflow_dispatch  # 手动触发，带平台选择参数
 ```
 
 ### 平台选项
-- `current` (默认) - 根据 runner 自动选择
+- `current` (默认) - **默认构建 Windows x64** 版本
 - `linux` - Linux x64
 - `windows` - Windows x64
 - ~~`macos-intel`~~ (已注释)
 - ~~`macos-m1`~~ (已注释)
+
+> **💡 提示**：`current` 选项现在默认构建 Windows 版本，因为这是最常用的平台。如果需要其他平台，请明确选择 `linux` 或 `windows`。
 
 ### 使用步骤
 
@@ -121,9 +123,9 @@ workflow_dispatch  # 手动触发，带平台选择参数
 1. 访问 **Actions** → **"Quick Build (Current Platform)"**
 2. 点击 **"Run workflow"**
 3. 在 **"Platform to build for"** 下拉菜单中选择平台：
-   - `current` - 自动选择（推荐快速测试）
+   - `current` - **构建 Windows x64**（默认推荐）
    - `linux` - 构建 Linux 版本
-   - `windows` - 构建 Windows 版本
+   - `windows` - 构建 Windows 版本（与 current 相同）
 4. 点击 **"Run workflow"** 确认
 
 #### 方法2：通过 GitHub CLI

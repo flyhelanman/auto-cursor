@@ -21,7 +21,7 @@ jobs:
         inputs.platform == 'windows' && 'windows-latest' ||
         inputs.platform == 'linux' && 'ubuntu-22.04' ||
         (inputs.platform == 'macos-intel' || inputs.platform == 'macos-m1') && 'macos-latest' ||
-        'macos-latest'
+        'windows-latest'
       }}
 
     steps:
@@ -50,7 +50,7 @@ jobs:
               inputs.platform == 'macos-m1' && 'aarch64-apple-darwin' ||
               inputs.platform == 'linux' && 'x86_64-unknown-linux-gnu' ||
               inputs.platform == 'windows' && 'x86_64-pc-windows-msvc' ||
-              ''
+              'x86_64-pc-windows-msvc'
             }}
 
       - name: Install Linux dependencies
@@ -86,7 +86,7 @@ jobs:
               inputs.platform == 'macos-m1' && '--target aarch64-apple-darwin' ||
               inputs.platform == 'linux' && '--target x86_64-unknown-linux-gnu' ||
               inputs.platform == 'windows' && '--target x86_64-pc-windows-msvc' ||
-              ''
+              '--target x86_64-pc-windows-msvc'
             }}
 
       - name: Determine target
@@ -102,7 +102,7 @@ jobs:
           elif [ "${{ inputs.platform }}" = "windows" ]; then
             echo "target=x86_64-pc-windows-msvc" >> $GITHUB_OUTPUT
           else
-            echo "target=" >> $GITHUB_OUTPUT
+            echo "target=x86_64-pc-windows-msvc" >> $GITHUB_OUTPUT
           fi
 
       - name: Prepare artifacts (macOS)
@@ -112,7 +112,7 @@ jobs:
           find src-tauri/target/${{ steps.target.outputs.target }}/release/bundle -name "*.dmg" -exec cp {} artifacts/ \;
 
       - name: Prepare artifacts (Windows)
-        if: inputs.platform == 'windows'
+        if: inputs.platform == 'windows' || inputs.platform == 'current'
         run: |
           mkdir artifacts
           $exeFiles = Get-ChildItem -Path "src-tauri/target/${{ steps.target.outputs.target }}/release/bundle" -Recurse -Include "*.exe"
@@ -129,29 +129,7 @@ jobs:
           find src-tauri/target/${{ steps.target.outputs.target }}/release/bundle -name "*.deb" -exec cp {} artifacts/ \;
           find src-tauri/target/${{ steps.target.outputs.target }}/release/bundle -name "*.AppImage" -exec cp {} artifacts/ \;
 
-      - name: Prepare artifacts (current platform)
-        if: inputs.platform == 'current'
-        shell: bash
-        run: |
-          mkdir -p artifacts
-          # 自动检测并复制构建产物
-          if [ -d "src-tauri/target/release/bundle" ]; then
-            cp -r src-tauri/target/release/bundle/* artifacts/ || true
-          fi
-          if [ -d "src-tauri/target/x86_64-unknown-linux-gnu/release/bundle" ]; then
-            find src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -name "*.deb" -exec cp {} artifacts/ \;
-            find src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -name "*.AppImage" -exec cp {} artifacts/ \;
-          fi
-          if [ -d "src-tauri/target/x86_64-pc-windows-msvc/release/bundle" ]; then
-            find src-tauri/target/x86_64-pc-windows-msvc/release/bundle -name "*.exe" -exec cp {} artifacts/ \; || true
-            find src-tauri/target/x86_64-pc-windows-msvc/release/bundle -name "*.msi" -exec cp {} artifacts/ \; || true
-          fi
-          if [ -d "src-tauri/target/x86_64-apple-darwin/release/bundle" ]; then
-            find src-tauri/target/x86_64-apple-darwin/release/bundle -name "*.dmg" -exec cp {} artifacts/ \;
-          fi
-          if [ -d "src-tauri/target/aarch64-apple-darwin/release/bundle" ]; then
-            find src-tauri/target/aarch64-apple-darwin/release/bundle -name "*.dmg" -exec cp {} artifacts/ \;
-          fi
+      # current platform 现在默认使用 Windows，由上面的 "Prepare artifacts (Windows)" 步骤处理
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
