@@ -144,8 +144,19 @@ export const VirtualCardGeneratorPage: React.FC = () => {
                 return;
             }
 
-            // 有现有地址，直接使用第一张卡的地址信息
-            await addCardWithAddress(existingConfig.cards[0]);
+            // 有现有地址，提取地址信息（不包含卡号信息）
+            const addressInfo: AddressForm = {
+                billingName: existingConfig.cards[0].billingName,
+                billingCountry: existingConfig.cards[0].billingCountry,
+                billingPostalCode: existingConfig.cards[0].billingPostalCode,
+                billingAdministrativeArea: existingConfig.cards[0].billingAdministrativeArea,
+                billingLocality: existingConfig.cards[0].billingLocality,
+                billingDependentLocality: existingConfig.cards[0].billingDependentLocality,
+                billingAddressLine1: existingConfig.cards[0].billingAddressLine1,
+            };
+
+            // 使用提取的地址信息添加新卡
+            await addCardWithAddress(addressInfo);
         } catch (error) {
             console.error("读取银行卡配置失败:", error);
             setShowAddressForm(true);
@@ -368,8 +379,8 @@ export const VirtualCardGeneratorPage: React.FC = () => {
                                             key={index}
                                             onClick={() => setSelectedCardIndex(index)}
                                             className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedCardIndex === index
-                                                    ? "border-blue-500 bg-blue-50"
-                                                    : "border-gray-200 bg-white hover:border-gray-300"
+                                                ? "border-blue-500 bg-blue-50"
+                                                : "border-gray-200 bg-white hover:border-gray-300"
                                                 }`}
                                         >
                                             <div className="flex items-start justify-between mb-2">
